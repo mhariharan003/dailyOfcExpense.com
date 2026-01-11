@@ -2,227 +2,299 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Personal Spend Tracker</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SpendWise Mobile</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
     <style>
-        :root { --primary: #6366f1; --danger: #ef4444; --success: #22c55e; --bg: #f8fafc; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 20px; color: #1e293b; }
-        .container { background: white; padding: 2rem; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; max-width: 700px; }
-        #login-section { text-align: center; }
-        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #e2e8f0; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
-        button { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: 0.2s; }
-        .btn-primary { background: var(--primary); color: white; width: 100%; margin-top: 10px; }
-        .btn-danger { background: var(--danger); color: white; }
-        .btn-success { background: var(--success); color: white; }
-        .hidden { display: none; }
+        :root {
+            --primary: #6366f1;
+            --secondary: #4f46e5;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --success: #10b981;
+            --danger: #ef4444;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         
-        .calculator-box { background: #f1f5f9; border: 2px dashed #cbd5e1; padding: 15px; border-radius: 12px; margin: 15px 0; }
-        .item-row { display: flex; gap: 10px; margin-bottom: 8px; }
-        .total-display { font-size: 1.1rem; margin-top: 10px; text-align: right; color: #475569; }
+        body { 
+            margin: 0; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            background-color: var(--bg); 
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* Login Screen */
+        .login-screen {
+            padding: 40px 20px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        /* App Layout */
+        .app-header {
+            background: var(--primary);
+            color: white;
+            padding: 20px;
+            border-bottom-left-radius: 25px;
+            border-bottom-right-radius: 25px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .main-content {
+            padding: 15px;
+            padding-bottom: 100px; /* Space for bottom nav */
+            flex-grow: 1;
+        }
+
+        .balance-card {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            margin-top: -30px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+        }
+
+        .balance-item span { font-size: 12px; color: #64748b; display: block; }
+        .balance-item strong { font-size: 18px; color: var(--text); }
+
+        /* Form Elements */
+        .input-group { background: var(--card); border-radius: 15px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        input, select { 
+            width: 100%; 
+            padding: 12px; 
+            margin: 8px 0; 
+            border: 1px solid #e2e8f0; 
+            border-radius: 10px; 
+            font-size: 16px; /* Prevents auto-zoom on iOS */
+        }
+
+        .item-row { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; }
         
-        .stats { display: flex; justify-content: space-between; margin-bottom: 20px; font-weight: bold; background: #e0e7ff; padding: 15px; border-radius: 12px; color: #3730a3; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
-        th, td { border-bottom: 1px solid #f1f5f9; padding: 12px; text-align: left; }
-        th { background: #f8fafc; color: #64748b; text-transform: uppercase; font-size: 12px; }
-        .type-spend { color: var(--danger); font-weight: bold; }
-        .type-income { color: var(--success); font-weight: bold; }
-        .user-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f1f5f9; margin-bottom: 15px; padding-bottom: 10px; }
+        .btn { 
+            border: none; 
+            border-radius: 12px; 
+            padding: 14px; 
+            font-weight: 600; 
+            width: 100%; 
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn-main { background: var(--primary); color: white; }
+        .btn-ghost { background: #e2e8f0; color: var(--text); }
+        .btn-add { background: var(--success); color: white; margin-top: 10px; padding: 8px; font-size: 14px; }
+
+        /* Transaction List */
+        .history-list { margin-top: 20px; }
+        .transaction-card {
+            background: white;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 5px solid transparent;
+        }
+        .tx-spend { border-left-color: var(--danger); }
+        .tx-income { border-left-color: var(--success); }
+        
+        .tx-info div:first-child { font-weight: 600; font-size: 15px; }
+        .tx-info div:last-child { font-size: 12px; color: #94a3b8; }
+        .tx-amount { font-weight: 700; text-align: right; }
+
+        /* Bottom Nav */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background: white;
+            display: flex;
+            justify-content: space-around;
+            padding: 15px;
+            border-top: 1px solid #e2e8f0;
+            box-shadow: 0 -5px 10px rgba(0,0,0,0.05);
+        }
+
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div id="login-section">
-        <h2 style="color: var(--primary);">Welcome Back</h2>
-        <p style="color: #64748b;">Please sign in to track your spends</p>
-        <input type="text" id="username" placeholder="Username">
+    <div id="login-screen" class="login-screen">
+        <h1 style="color:var(--primary); margin-bottom: 5px;">SpendWise</h1>
+        <p style="color:#64748b; margin-bottom: 30px;">Track your personal expenses</p>
+        <input type="text" id="username" placeholder="Username (Gundu / Srividhyalakshmi)">
         <input type="password" id="password" placeholder="Password">
-        <button class="btn-primary" onclick="login()">Sign In</button>
+        <button class="btn btn-main" onclick="login()">Sign In</button>
     </div>
 
-    <div id="app-section" class="hidden">
-        <div class="user-header">
-            <div>
-                <span style="color: #64748b; font-size: 14px;">User:</span>
-                <strong id="display-user" style="font-size: 18px; color: var(--primary);"></strong>
-            </div>
-            <div style="display:flex; gap:10px;">
-                <button class="btn-danger" style="padding: 5px 10px;" onclick="resetApp()">Clear My Data</button>
-                <button style="background:#64748b; color:white; padding: 5px 10px;" onclick="location.reload()">Logout</button>
+    <div id="app-screen" class="hidden">
+        <div class="app-header">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h2 id="welcome-msg" style="margin:0; font-size:20px;">Hi, User</h2>
+                <span onclick="location.reload()" style="font-size:14px; opacity:0.8;">Logout</span>
             </div>
         </div>
 
-        <div class="stats">
-            <span>My Balance: ₹<span id="bal-val">0</span></span>
-            <span>Total Spends: ₹<span id="spent-val">0</span></span>
+        <div class="balance-card">
+            <div class="balance-item">
+                <span>Current Balance</span>
+                <strong id="bal-val">₹0</strong>
+            </div>
+            <div class="balance-item">
+                <span>Total Spent</span>
+                <strong id="spent-val" style="color:var(--danger);">₹0</strong>
+            </div>
         </div>
 
-        <label>Date</label>
-        <input type="date" id="entry-date">
+        <div class="main-content">
+            <div class="input-group">
+                <h3 style="margin-top:0; font-size:16px;">New Entry</h3>
+                <input type="date" id="entry-date">
+                
+                <div id="items-list"></div>
+                <button class="btn btn-add" onclick="addItemRow()">+ Add Item</button>
+                
+                <select id="entry-type">
+                    <option value="spend">💸 Expense (Spend)</option>
+                    <option value="income">💰 Income (Received)</option>
+                </select>
+                
+                <div style="text-align: right; padding: 10px 0; font-weight: bold;">
+                    Total: ₹<span id="temp-total">0</span>
+                </div>
+                
+                <button class="btn btn-main" onclick="saveEntry()">Record Transaction</button>
+            </div>
 
-        <div class="calculator-box" id="calc-container">
-            <strong>Personal Shopping / Item List</strong>
-            <div id="items-list"></div>
-            <button class="btn-success" style="width: auto; margin-top: 10px; font-size: 12px;" onclick="addItemRow()">+ Add New Item</button>
-            <div class="total-display">Total: <strong>₹<span id="temp-total">0</span></strong></div>
+            <div class="history-list">
+                <h3 style="font-size:16px; margin-bottom:10px;">Recent Transactions</h3>
+                <div id="tx-container"></div>
+            </div>
         </div>
 
-        <label>Type of Transaction</label>
-        <select id="entry-type">
-            <option value="spend">Spend (Expenses / Shopping)</option>
-            <option value="income">Income (Salary / Pocket Money)</option>
-        </select>
-
-        <button class="btn-primary" onclick="saveEntry()">Record Transaction</button>
-        <button onclick="exportPDF()" style="width:100%; margin-top:10px; background:#475569; color:white;">Download Report (PDF)</button>
-
-        <table>
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Details</th>
-                    <th>Type</th>
-                    <th>Amount</th>
-                    <th>Balance</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody id="table-body"></tbody>
-        </table>
+        <div class="bottom-nav">
+            <button class="btn btn-ghost" style="width:45%;" onclick="exportPDF()">Export PDF</button>
+            <button class="btn btn-danger" style="width:45%;" onclick="resetApp()">Clear All</button>
+        </div>
     </div>
-</div>
 
 <script>
-    const users = {
-        "Gundu": "hari",
-        "Srividhyalakshmi": "sriluxee",
-        "Kaushika":"kaushikavimal"
-    };
-
+    const users = { "Gundu": "hari", "Srividhyalakshmi": "sriluxee","Kaushika":"kaushikavimal" };
     let currentUser = "";
     let entries = [];
 
     function login() {
         const u = document.getElementById('username').value;
         const p = document.getElementById('password').value;
-
-        if(users[u] && users[u] === p) {
+        if(users[u] === p) {
             currentUser = u;
-            document.getElementById('login-section').classList.add('hidden');
-            document.getElementById('app-section').classList.remove('hidden');
-            document.getElementById('display-user').innerText = currentUser;
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('app-screen').classList.remove('hidden');
+            document.getElementById('welcome-msg').innerText = "Hi, " + currentUser;
             document.getElementById('entry-date').valueAsDate = new Date();
-            
-            // Load user-specific data
             entries = JSON.parse(localStorage.getItem('data_' + currentUser)) || [];
             addItemRow();
             renderData();
-        } else {
-            alert("Invalid Username or Password");
-        }
+        } else { alert("Login failed!"); }
     }
 
     function addItemRow() {
-        const list = document.getElementById('items-list');
         const div = document.createElement('div');
         div.className = 'item-row';
         div.innerHTML = `
-            <input type="text" placeholder="Item (e.g. Shirt, Coffee)" class="item-name" style="flex: 2;">
-            <input type="number" placeholder="Price" class="item-price" style="flex: 1;" oninput="calcTotal()">
-            <button class="btn-danger" onclick="this.parentElement.remove(); calcTotal();" style="flex: 0.2; padding: 5px;">✕</button>
+            <input type="text" placeholder="Item" class="item-name" style="flex:2">
+            <input type="number" placeholder="₹" class="item-price" style="flex:1" oninput="calcTotal()">
+            <span onclick="this.parentElement.remove(); calcTotal();" style="color:var(--danger); padding:10px;">✕</span>
         `;
-        list.appendChild(div);
+        document.getElementById('items-list').appendChild(div);
     }
 
     function calcTotal() {
-        let total = 0;
-        document.querySelectorAll('.item-price').forEach(p => { if(p.value) total += parseFloat(p.value); });
-        document.getElementById('temp-total').innerText = total;
-        return total;
+        let t = 0;
+        document.querySelectorAll('.item-price').forEach(p => { if(p.value) t += parseFloat(p.value); });
+        document.getElementById('temp-total').innerText = t;
+        return t;
     }
 
     function saveEntry() {
-        const date = document.getElementById('entry-date').value;
-        const type = document.getElementById('entry-type').value;
-        const totalAmt = calcTotal();
-        const details = Array.from(document.querySelectorAll('.item-name')).map(i => i.value).filter(v => v !== "").join(", ");
+        const total = calcTotal();
+        const details = Array.from(document.querySelectorAll('.item-name')).map(i => i.value).filter(v => v).join(", ");
+        if(total <= 0) return alert("Enter items and prices");
 
-        if(!date || totalAmt <= 0) { alert("Please enter items and amount"); return; }
-
-        entries.push({ date, desc: details || (type === 'income' ? 'Income Received' : 'Misc Spend'), type, amt: totalAmt });
-        saveAndRender();
+        entries.push({
+            date: document.getElementById('entry-date').value,
+            desc: details || "Misc",
+            type: document.getElementById('entry-type').value,
+            amt: total
+        });
         
-        // Reset inputs
+        localStorage.setItem('data_' + currentUser, JSON.stringify(entries));
         document.getElementById('items-list').innerHTML = "";
         addItemRow();
         document.getElementById('temp-total').innerText = "0";
-    }
-
-    function renderData() {
-        const tbody = document.getElementById('table-body');
-        tbody.innerHTML = "";
-        let bal = 0; let spent = 0;
-        entries.sort((a,b) => new Date(a.date) - new Date(b.date));
-
-        entries.forEach((item, index) => {
-            if(item.type === 'income') bal += item.amt;
-            else { bal -= item.amt; spent += item.amt; }
-
-            tbody.innerHTML += `
-                <tr>
-                    <td>${item.date}</td>
-                    <td>${item.desc}</td>
-                    <td class="type-${item.type}">${item.type.toUpperCase()}</td>
-                    <td>₹${item.amt}</td>
-                    <td>₹${bal}</td>
-                    <td><button onclick="deleteEntry(${index})" style="background:none; border:none; color:red; cursor:pointer;">Delete</button></td>
-                </tr>
-            `;
-        });
-        document.getElementById('bal-val').innerText = bal;
-        document.getElementById('spent-val').innerText = spent;
-    }
-
-    function deleteEntry(index) {
-        if(confirm("Remove this entry?")) {
-            entries.splice(index, 1);
-            saveAndRender();
-        }
-    }
-
-    function saveAndRender() {
-        localStorage.setItem('data_' + currentUser, JSON.stringify(entries));
         renderData();
     }
 
+    function renderData() {
+        const container = document.getElementById('tx-container');
+        container.innerHTML = "";
+        let bal = 0; let spent = 0;
+        entries.sort((a,b) => new Date(b.date) - new Date(a.date)); // Newest first for mobile
+
+        entries.forEach((item, index) => {
+            const isSpend = item.type === 'spend';
+            if(!isSpend) bal += item.amt; else { bal -= item.amt; spent += item.amt; }
+
+            container.innerHTML += `
+                <div class="transaction-card ${isSpend ? 'tx-spend' : 'tx-income'}">
+                    <div class="tx-info">
+                        <div>${item.desc}</div>
+                        <div>${item.date}</div>
+                    </div>
+                    <div class="tx-amount" style="color:${isSpend ? 'var(--danger)' : 'var(--success)'}">
+                        ${isSpend ? '-' : '+'} ₹${item.amt}
+                        <div style="font-size:10px; color:#94a3b8; font-weight:normal;">Bal: ₹${bal}</div>
+                    </div>
+                </div>
+            `;
+        });
+        document.getElementById('bal-val').innerText = "₹" + bal;
+        document.getElementById('spent-val').innerText = "₹" + spent;
+    }
+
     function resetApp() {
-        if(confirm("Warning: This will permanently delete ALL your personal data!")) {
+        if(confirm("Delete all your data?")) {
+            localStorage.removeItem('data_' + currentUser);
             entries = [];
-            saveAndRender();
+            renderData();
         }
     }
 
     function exportPDF() {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
-        doc.setFontSize(18);
-        doc.text(`Expense Report: ${currentUser}`, 15, 20);
-        doc.setFontSize(10);
-        doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 15, 28);
-        
-        const rows = entries.map(e => [e.date, e.desc, e.type.toUpperCase(), `Rs. ${e.amt}`]);
-        doc.autoTable({ 
-            head: [['Date', 'Description', 'Type', 'Amount']], 
-            body: rows, 
-            startY: 35,
-            theme: 'grid',
-            headStyles: { fillColor: [99, 102, 241] }
-        });
-        doc.save(`${currentUser}_Spends.pdf`);
+        doc.text(`Spend Report: ${currentUser}`, 15, 20);
+        const rows = entries.map(e => [e.date, e.desc, e.type, e.amt]);
+        doc.autoTable({ head: [['Date', 'Description', 'Type', 'Amount']], body: rows, startY: 25 });
+        doc.save(`${currentUser}_Summary.pdf`);
     }
 </script>
 </body>
-
 </html>
