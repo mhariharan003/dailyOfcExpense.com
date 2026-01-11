@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Spend Tracker</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        :root { --primary: #6366f1; --danger: #ef4444; --success: #22c55e; --bg: #f8fafc; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 20px; color: #1e293b; }
+        .container { background: white; padding: 2rem; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; max-width: 700px; }
+        #login-section { text-align: center; }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #e2e8f0; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
+        button { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: 0.2s; }
+        .btn-primary { background: var(--primary); color: white; width: 100%; margin-top: 10px; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .hidden { display: none; }
+        
+        .calculator-box { background: #f1f5f9; border: 2px dashed #cbd5e1; padding: 15px; border-radius: 12px; margin: 15px 0; }
+        .item-row { display: flex; gap: 10px; margin-bottom: 8px; }
+        .total-display { font-size: 1.1rem; margin-top: 10px; text-align: right; color: #475569; }
+        
+        .stats { display: flex; justify-content: space-between; margin-bottom: 20px; font-weight: bold; background: #e0e7ff; padding: 15px; border-radius: 12px; color: #3730a3; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
+        th, td { border-bottom: 1px solid #f1f5f9; padding: 12px; text-align: left; }
+        th { background: #f8fafc; color: #64748b; text-transform: uppercase; font-size: 12px; }
+        .type-spend { color: var(--danger); font-weight: bold; }
+        .type-income { color: var(--success); font-weight: bold; }
+        .user-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f1f5f9; margin-bottom: 15px; padding-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="login-section">
+        <h2 style="color: var(--primary);">Welcome Back</h2>
+        <p style="color: #64748b;">Please sign in to track your spends</p>
+        <input type="text" id="username" placeholder="Username">
+        <input type="password" id="password" placeholder="Password">
+        <button class="btn-primary" onclick="login()">Sign In</button>
+    </div>
+
+    <div id="app-section" class="hidden">
+        <div class="user-header">
+            <div>
+                <span style="color: #64748b; font-size: 14px;">User:</span>
+                <strong id="display-user" style="font-size: 18px; color: var(--primary);"></strong>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <button class="btn-danger" style="padding: 5px 10px;" onclick="resetApp()">Clear My Data</button>
+                <button style="background:#64748b; color:white; padding: 5px 10px;" onclick="location.reload()">Logout</button>
+            </div>
+        </div>
+
+        <div class="stats">
+            <span>My Balance: ₹<span id="bal-val">0</span></span>
+            <span>Total Spends: ₹<span id="spent-val">0</span></span>
+        </div>
+
+        <label>Date</label>
+        <input type="date" id="entry-date">
+
+        <div class="calculator-box" id="calc-container">
+            <strong>Personal Shopping / Item List</strong>
+            <div id="items-list"></div>
+            <button class="btn-success" style="width: auto; margin-top: 10px; font-size: 12px;" onclick="addItemRow()">+ Add New Item</button>
+            <div class="total-display">Total: <strong>₹<span id="temp-total">0</span></strong></div>
+        </div>
+
+        <label>Type of Transaction</label>
+        <select id="entry-type">
+            <option value="spend">Spend (Expenses / Shopping)</option>
+            <option value="income">Income (Salary / Pocket Money)</option>
+        </select>
+
+        <button class="btn-primary" onclick="saveEntry()">Record Transaction</button>
+        <button onclick="exportPDF()" style="width:100%; margin-top:10px; background:#475569; color:white;">Download Report (PDF)</button>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Details</th>
+                    <th>Type</th>
+                    <th>Amount</th>
+                    <th>Balance</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="table-body"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    const users = {
+        "Gundu": "hari",
+        "Srividhyalakshmi": "sriluxee"
+    };
+
+    let currentUser = "";
+    let entries = [];
+
+    function login() {
+        const u = document.getElementById('username').value;
+        const p = document.getElementById('password').value;
+
+        if(users[u] && users[u] === p) {
+            currentUser = u;
+            document.getElementById('login-section').classList.add('hidden');
+            document.getElementById('app-section').classList.remove('hidden');
+            document.getElementById('display-user').innerText = currentUser;
+            document.getElementById('entry-date').valueAsDate = new Date();
+            
+            // Load user-specific data
+            entries = JSON.parse(localStorage.getItem('data_' + currentUser)) || [];
+            addItemRow();
+            renderData();
+        } else {
+            alert("Invalid Username or Password");
+        }
+    }
+
+    function addItemRow() {
+        const list = document.getElementById('items-list');
+        const div = document.createElement('div');
+        div.className = 'item-row';
+        div.innerHTML = `
+            <input type="text" placeholder="Item (e.g. Shirt, Coffee)" class="item-name" style="flex: 2;">
+            <input type="number" placeholder="Price" class="item-price" style="flex: 1;" oninput="calcTotal()">
+            <button class="btn-danger" onclick="this.parentElement.remove(); calcTotal();" style="flex: 0.2; padding: 5px;">✕</button>
+        `;
+        list.appendChild(div);
+    }
+
+    function calcTotal() {
+        let total = 0;
+        document.querySelectorAll('.item-price').forEach(p => { if(p.value) total += parseFloat(p.value); });
+        document.getElementById('temp-total').innerText = total;
+        return total;
+    }
+
+    function saveEntry() {
+        const date = document.getElementById('entry-date').value;
+        const type = document.getElementById('entry-type').value;
+        const totalAmt = calcTotal();
+        const details = Array.from(document.querySelectorAll('.item-name')).map(i => i.value).filter(v => v !== "").join(", ");
+
+        if(!date || totalAmt <= 0) { alert("Please enter items and amount"); return; }
+
+        entries.push({ date, desc: details || (type === 'income' ? 'Income Received' : 'Misc Spend'), type, amt: totalAmt });
+        saveAndRender();
+        
+        // Reset inputs
+        document.getElementById('items-list').innerHTML = "";
+        addItemRow();
+        document.getElementById('temp-total').innerText = "0";
+    }
+
+    function renderData() {
+        const tbody = document.getElementById('table-body');
+        tbody.innerHTML = "";
+        let bal = 0; let spent = 0;
+        entries.sort((a,b) => new Date(a.date) - new Date(b.date));
+
+        entries.forEach((item, index) => {
+            if(item.type === 'income') bal += item.amt;
+            else { bal -= item.amt; spent += item.amt; }
+
+            tbody.innerHTML += `
+                <tr>
+                    <td>${item.date}</td>
+                    <td>${item.desc}</td>
+                    <td class="type-${item.type}">${item.type.toUpperCase()}</td>
+                    <td>₹${item.amt}</td>
+                    <td>₹${bal}</td>
+                    <td><button onclick="deleteEntry(${index})" style="background:none; border:none; color:red; cursor:pointer;">Delete</button></td>
+                </tr>
+            `;
+        });
+        document.getElementById('bal-val').innerText = bal;
+        document.getElementById('spent-val').innerText = spent;
+    }
+
+    function deleteEntry(index) {
+        if(confirm("Remove this entry?")) {
+            entries.splice(index, 1);
+            saveAndRender();
+        }
+    }
+
+    function saveAndRender() {
+        localStorage.setItem('data_' + currentUser, JSON.stringify(entries));
+        renderData();
+    }
+
+    function resetApp() {
+        if(confirm("Warning: This will permanently delete ALL your personal data!")) {
+            entries = [];
+            saveAndRender();
+        }
+    }
+
+    function exportPDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        doc.setFontSize(18);
+        doc.text(`Expense Report: ${currentUser}`, 15, 20);
+        doc.setFontSize(10);
+        doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 15, 28);
+        
+        const rows = entries.map(e => [e.date, e.desc, e.type.toUpperCase(), `Rs. ${e.amt}`]);
+        doc.autoTable({ 
+            head: [['Date', 'Description', 'Type', 'Amount']], 
+            body: rows, 
+            startY: 35,
+            theme: 'grid',
+            headStyles: { fillColor: [99, 102, 241] }
+        });
+        doc.save(`${currentUser}_Spends.pdf`);
+    }
+</script>
+</body>
+</html>
