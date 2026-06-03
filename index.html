@@ -118,10 +118,14 @@
     position: fixed;
     inset: 0;
     background: rgba(0,0,0,.45);
-    display: flex;
     justify-content: center;
     align-items: center;
     z-index: 9999;
+    display: none;
+}
+
+.calc-modal.show {
+    display: flex;
 }
 
 .calc-card {
@@ -270,7 +274,7 @@
         </div>
     </div>
 </div>
-<div id="calculatorModal" class="calc-modal hidden">
+<div id="calculatorModal" class="calc-modal">
 
     <div class="calc-card">
 
@@ -330,7 +334,7 @@
             <button
                 class="btn btn-record"
                 onclick="useCalculatorValue()">
-                Use Amount
+                Done
             </button>
 
             <button
@@ -346,7 +350,6 @@
 
 </div>
 <script>
-    const STORAGE_KEY = "my_spends_data_v2";
     let calcExpression = "";
 
 function openCalculator() {
@@ -355,13 +358,13 @@ function openCalculator() {
 
     document
         .getElementById("calculatorModal")
-        .classList.remove("hidden");
+        .classList.add("show");
 }
 
 function closeCalculator() {
     document
         .getElementById("calculatorModal")
-        .classList.add("hidden");
+        .classList.remove("show");
 }
 
 function appendCalc(value) {
@@ -403,26 +406,26 @@ function calculateResult() {
     }
 }
 
-function useCalculatorValue() {
+// function useCalculatorValue() {
 
-    const result =
-        document.getElementById(
-            "calc-display"
-        ).value;
+//     const result =
+//         document.getElementById(
+//             "calc-display"
+//         ).value;
 
-    if (!result) return;
+//     if (!result) return;
 
-    const amountField =
-        document.querySelector(
-            ".item-row:last-child .in-price"
-        );
+//     const amountField =
+//         document.querySelector(
+//             ".item-row:last-child .in-price"
+//         );
 
-    if (amountField) {
-        amountField.value = result;
-    }
+//     if (amountField) {
+//         amountField.value = result;
+//     }
 
-    closeCalculator();
-}
+//     closeCalculator();
+// }
 
 window.addEventListener(
     "click",
