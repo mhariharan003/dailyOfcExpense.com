@@ -88,6 +88,108 @@
         .delete-link { color: var(--danger); text-decoration: none; font-weight: bold; cursor: pointer; }
 
         .hidden { display: none; }
+
+        /* Calculator */
+
+.date-calc-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.date-calc-row input {
+    flex: 1;
+    margin: 0;
+}
+
+.calc-trigger-btn {
+    width: 55px;
+    height: 55px;
+    border: none;
+    border-radius: 12px;
+    background: var(--primary);
+    color: white;
+    font-size: 22px;
+    cursor: pointer;
+}
+
+.calc-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.45);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.calc-card {
+    width: 350px;
+    max-width: 95%;
+    background: white;
+    border-radius: 20px;
+    padding: 20px;
+}
+
+.calc-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.calc-close {
+    cursor: pointer;
+    font-size: 22px;
+    font-weight: bold;
+}
+
+.calc-display {
+    width: 100%;
+    text-align: right;
+    font-size: 28px;
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+
+.calc-grid {
+    display: grid;
+    grid-template-columns: repeat(4,1fr);
+    gap: 8px;
+}
+
+.calc-grid button {
+    height: 55px;
+    border: none;
+    border-radius: 12px;
+    background: #f1f5f9;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+.calc-grid button:hover {
+    background: #e2e8f0;
+}
+
+.calc-equals {
+    width: 100%;
+    margin-top: 10px;
+    height: 55px;
+    border: none;
+    border-radius: 12px;
+    background: var(--primary);
+    color: white;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.calc-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
         
         @media (max-width: 600px) {
             .user-identity h2 { font-size: 22px; }
@@ -126,7 +228,16 @@
         </div>
 
         <div class="entry-card">
-            <input type="date" id="entry-date">
+            <div class="date-calc-row">
+    <input type="date" id="entry-date">
+
+    <button
+        type="button"
+        class="calc-trigger-btn"
+        onclick="openCalculator()">
+        🧮
+    </button>
+</div>
             <div id="item-container"></div>
             <span onclick="addItemRow()" style="color: var(--primary); font-weight: bold; font-size: 14px; cursor: pointer;">+ Add Item</span>
             
@@ -159,8 +270,174 @@
         </div>
     </div>
 </div>
+<div id="calculatorModal" class="calc-modal hidden">
 
+    <div class="calc-card">
+
+        <div class="calc-header">
+            <h3>Calculator</h3>
+
+            <span
+                class="calc-close"
+                onclick="closeCalculator()">
+                ✕
+            </span>
+        </div>
+
+        <input
+            type="text"
+            id="calc-display"
+            class="calc-display"
+            readonly>
+
+        <div class="calc-grid">
+
+            <button onclick="clearCalc()">C</button>
+            <button onclick="backspaceCalc()">⌫</button>
+            <button onclick="appendCalc('(')">(</button>
+            <button onclick="appendCalc(')')">)</button>
+
+            <button onclick="appendCalc('7')">7</button>
+            <button onclick="appendCalc('8')">8</button>
+            <button onclick="appendCalc('9')">9</button>
+            <button onclick="appendCalc('/')">÷</button>
+
+            <button onclick="appendCalc('4')">4</button>
+            <button onclick="appendCalc('5')">5</button>
+            <button onclick="appendCalc('6')">6</button>
+            <button onclick="appendCalc('*')">×</button>
+
+            <button onclick="appendCalc('1')">1</button>
+            <button onclick="appendCalc('2')">2</button>
+            <button onclick="appendCalc('3')">3</button>
+            <button onclick="appendCalc('-')">−</button>
+
+            <button onclick="appendCalc('0')">0</button>
+            <button onclick="appendCalc('00')">00</button>
+            <button onclick="appendCalc('.')">.</button>
+            <button onclick="appendCalc('+')">+</button>
+
+        </div>
+
+        <button
+            class="calc-equals"
+            onclick="calculateResult()">
+            =
+        </button>
+
+        <div class="calc-actions">
+
+            <button
+                class="btn btn-record"
+                onclick="useCalculatorValue()">
+                Use Amount
+            </button>
+
+            <button
+                class="btn"
+                style="background:#e2e8f0;color:black;"
+                onclick="closeCalculator()">
+                Close
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
 <script>
+    const STORAGE_KEY = "my_spends_data_v2";
+    let calcExpression = "";
+
+function openCalculator() {
+    calcExpression = "";
+    document.getElementById("calc-display").value = "";
+
+    document
+        .getElementById("calculatorModal")
+        .classList.remove("hidden");
+}
+
+function closeCalculator() {
+    document
+        .getElementById("calculatorModal")
+        .classList.add("hidden");
+}
+
+function appendCalc(value) {
+    calcExpression += value;
+
+    document.getElementById(
+        "calc-display"
+    ).value = calcExpression;
+}
+
+function clearCalc() {
+    calcExpression = "";
+
+    document.getElementById(
+        "calc-display"
+    ).value = "";
+}
+
+function backspaceCalc() {
+    calcExpression =
+        calcExpression.slice(0, -1);
+
+    document.getElementById(
+        "calc-display"
+    ).value = calcExpression;
+}
+
+function calculateResult() {
+    try {
+        calcExpression =
+            eval(calcExpression).toString();
+
+        document.getElementById(
+            "calc-display"
+        ).value = calcExpression;
+
+    } catch {
+        alert("Invalid Calculation");
+    }
+}
+
+function useCalculatorValue() {
+
+    const result =
+        document.getElementById(
+            "calc-display"
+        ).value;
+
+    if (!result) return;
+
+    const amountField =
+        document.querySelector(
+            ".item-row:last-child .in-price"
+        );
+
+    if (amountField) {
+        amountField.value = result;
+    }
+
+    closeCalculator();
+}
+
+window.addEventListener(
+    "click",
+    function (e) {
+
+        const modal =
+            document.getElementById(
+                "calculatorModal"
+            );
+
+        if (e.target === modal) {
+            closeCalculator();
+        }
+    }
+);
     const credentials = {
         "Gundu": "hari",
         "Srividhyalakshmi": "sriluxee",
